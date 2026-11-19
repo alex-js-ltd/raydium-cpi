@@ -1,43 +1,62 @@
-Raydium CPI adapters are suitable for different Anchor versions. For the stability of the AMM contract, it cannot be updated to the latest versions of Anchor and Solana in a timely manner. If you want to use the latest version of Anchor, please rely on this repository. The master branch maintains the latest version, if relying on an older Anchor, please refer to other branches.
+# Raydium CPI adapters — Anchor 1.2.x fork
+
+Fork of [raydium-io/raydium-cpi](https://github.com/raydium-io/raydium-cpi) for programs on
+Anchor 1.2.x.
+
+Upstream pins `anchor-lang`/`anchor-spl` to `=1.0.2`. Because the pin is exact, cargo cannot
+unify it with any other 1.x release, so an Anchor 1.2.2 program fails to resolve these crates
+even though 1.0 and 1.2 are semver compatible. This branch relaxes the pins to `1.2` and
+changes nothing else — no source changes were needed.
+
+Upstream's branches (`anchor-0.29.0` … `anchor-0.32.1`) remain the right choice for older
+Anchor versions. Use `master` for upstream's current pin.
 
 ## Environmental requirements
+
 ```
-solana-cli 3.1.10
-anchor-cli 1.0.2
-rust >=1.9.0
+anchor-cli 1.2.2
+solana-cli 4.1.2
+platform-tools v1.54 (rustc 1.89.0)
 ```
 
 ## Usage
-Call CLMM through CPI.
-```
-[dependencies]
-anchor-lang = "=1.0.2"
-anchor-spl = "=1.0.2"
-raydium-clmm-cpi = { git = "https://github.com/raydium-io/raydium-cpi", package = "raydium-clmm-cpi" }
-```
 
 Call CPMM through CPI.
-```
+```toml
 [dependencies]
-anchor-lang = "=1.0.2"
-anchor-spl = "=1.0.2"
-raydium-cpmm-cpi = { git = "https://github.com/raydium-io/raydium-cpi", package = "raydium-cpmm-cpi"}
+anchor-lang = "1.2"
+anchor-spl = "1.2"
+raydium-cpmm-cpi = { git = "https://github.com/alex-js-ltd/raydium-cpi", package = "raydium-cpmm-cpi", branch = "anchor-1.2.2" }
+```
+
+Call CLMM through CPI.
+```toml
+raydium-clmm-cpi = { git = "https://github.com/alex-js-ltd/raydium-cpi", package = "raydium-clmm-cpi", branch = "anchor-1.2.2" }
 ```
 
 Call AMM through CPI.
-```
-[dependencies]
-anchor-lang = "=1.0.2"
-anchor-spl = "=1.0.2"
-raydium-amm-cpi = { git = "https://github.com/raydium-io/raydium-cpi", package = "raydium-amm-cpi" }
+```toml
+raydium-amm-cpi = { git = "https://github.com/alex-js-ltd/raydium-cpi", package = "raydium-amm-cpi", branch = "anchor-1.2.2" }
 ```
 
 Call Launchpad through CPI.
-```
-[dependencies]
-anchor-lang = "=1.0.2"
-anchor-spl = "=1.0.2"
-raydium-amm-cpi = { git = "https://github.com/raydium-io/raydium-cpi", package = "raydium-launch-cpi" }
+```toml
+raydium-launch-cpi = { git = "https://github.com/alex-js-ltd/raydium-cpi", package = "raydium-launch-cpi", branch = "anchor-1.2.2" }
 ```
 
-You can find usage examples in this [repository](https://github.com/raydium-io/raydium-cpi-example/tree/anchor-0.31.0).
+## Note on the `metadata` feature
+
+`cpmm-cpi` previously enabled `anchor-spl`'s `metadata` feature, which it never used. That
+feature pulls in `mpl-token-metadata`, which depends on `solana-program 3.0.0`. With that crate
+in the dependency graph, `anchor build` installs and activates Solana 3.0.0 — downgrading the
+toolchain to platform-tools v1.51 / rustc 1.84.1, below the 1.89.0 that Anchor 1.2.2 programs
+require.
+
+`cpmm-cpi` now enables only `memo`, which it does use (`memo_program` in `context.rs`). This
+drops `solana-program` from its graph entirely.
+
+`clmm-cpi`, `amm-cpi`, and `launch-cpi` have not been audited for this and still enable
+`metadata`. Check before depending on them.
+
+Usage examples live in upstream's
+[example repository](https://github.com/raydium-io/raydium-cpi-example).
