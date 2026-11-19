@@ -55,8 +55,23 @@ require.
 `cpmm-cpi` now enables only `memo`, which it does use (`memo_program` in `context.rs`). This
 drops `solana-program` from its graph entirely.
 
-`clmm-cpi`, `amm-cpi`, and `launch-cpi` have not been audited for this and still enable
-`metadata`. Check before depending on them.
+The other adapters have been audited. `cpmm-cpi` was the only one enabling `metadata` without
+using it:
+
+| crate | uses `metadata` | uses `memo` | declares |
+| --- | --- | --- | --- |
+| `cpmm-cpi` | no | yes | `memo` |
+| `clmm-cpi` | yes | yes | `metadata`, `memo` |
+| `amm-cpi` | no | no | neither |
+| `launch-cpi` | yes | no | `metadata` |
+| `locking-cpi` | yes | yes | `memo`, `metadata` |
+
+`clmm-cpi`, `launch-cpi`, and `locking-cpi` use `anchor_spl::metadata::Metadata` as a
+`metadata_program` account, so they need the feature and will pull `solana-program 3.0.0` into
+your graph. Depending on any of them reintroduces the toolchain downgrade described above.
+
+`locking-cpi` previously declared only `memo` despite using `Metadata`; it compiled because its
+path dependency on `clmm-cpi` enabled the feature and cargo unified it. It now declares both.
 
 Usage examples live in upstream's
 [example repository](https://github.com/raydium-io/raydium-cpi-example).
